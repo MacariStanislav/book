@@ -11,26 +11,21 @@ function DayView() {
   const savedTasks = localStorage.getItem("tasks");
   const tasks = savedTasks ? JSON.parse(savedTasks) : [];
 
-  // --- ВАЖНО: создаём дату корректно без сдвигов, чтобы избежать багов с датой ---
-  // date приходит в формате "YYYY-MM-DD"
-  // Создадим дату в локальном времени, разбив строку вручную:
-  const [year, month, day] = date.split("-").map(Number);
-  const dateObj = new Date(year, month - 1, day); // месяцы 0-индексированы
-
+ const [year, month, day] = date.split("-").map(Number);
+  const dateObj = new Date(year, month - 1, day);
   const dayAbbr = DAY_OF_WEEK_ABBR[dateObj.getDay()];
 
-  // Фильтруем задачи, которые назначены на точную дату или на этот день недели
   const dayTasks = tasks.filter(
     (task) =>
       task.date === date ||
       (task.days && task.days.includes(dayAbbr))
   );
 
-  // Группируем задачи по часам (округляем время задачи до часа, например 06:22 → 06:00)
+  
   const tasksByTime = {};
 
   dayTasks.forEach((task) => {
-    // Из task.time взять только часы и сделать строку "HH:00"
+   
     const [hoursStr] = task.time.split(":");
     const hourKey = hoursStr.padStart(2, "0") + ":00";
 

@@ -13,8 +13,8 @@ const IMPORTANCE_COLORS = [
 
 function getWeekDates(startDate) {
   const dates = [];
-  const dayOfWeek = startDate.getDay(); // 0 (Вс) - 6 (Сб)
-  const diffToMon = (dayOfWeek + 6) % 7; // сколько дней отступать назад к понедельнику
+  const dayOfWeek = startDate.getDay(); 
+  const diffToMon = (dayOfWeek + 6) % 7; 
   const monday = new Date(startDate);
   monday.setHours(0, 0, 0, 0);
   monday.setDate(startDate.getDate() - diffToMon);
