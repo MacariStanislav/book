@@ -13,8 +13,8 @@ const IMPORTANCE_COLORS = [
 
 function getWeekDates(startDate) {
   const dates = [];
-  const dayOfWeek = startDate.getDay(); 
-  const diffToMon = (dayOfWeek + 6) % 7; 
+  const dayOfWeek = startDate.getDay();
+  const diffToMon = (dayOfWeek + 6) % 7;
   const monday = new Date(startDate);
   monday.setHours(0, 0, 0, 0);
   monday.setDate(startDate.getDate() - diffToMon);
@@ -30,14 +30,12 @@ function formatDate(date) {
   return `${date.getDate()}.${date.getMonth() + 1}`;
 }
 
-
 function formatISODate(date) {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
-
 
 function ScheduleApp() {
   const navigate = useNavigate();
@@ -251,13 +249,20 @@ function ScheduleApp() {
                 <span className="date-number">{dateStr}</span>
               </div>
               <div className="tasks-list">
-                {dayTasks.length === 0 && <div className="no-tasks">Нет задач</div>}
-                {dayTasks.map(({ id, title, time, color }) => (
+                {dayTasks.length === 0 && (
+                  <div className="no-tasks">Нет задач</div>
+                )}
+
+                {dayTasks.slice(0, 3).map(({ id, title, time, color }) => (
                   <div
                     key={id}
                     className="task-item"
-                    style={{ borderLeftColor: color, boxShadow: `0 0 8px ${color}33` }}
-                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      borderLeftColor: color,
+                      boxShadow: `0 0 8px ${color}33`,
+                      cursor: "default",
+                    }}
+                    onClick={(e) => e.stopPropagation()} // чтобы не было навигации при клике по задаче
                   >
                     <div className="task-info">
                       <div className="task-time">{time}</div>
@@ -265,13 +270,20 @@ function ScheduleApp() {
                     </div>
                     <button
                       className="btn-delete"
-                      onClick={() => deleteTask(id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTask(id);
+                      }}
                       aria-label="Удалить задачу"
                     >
                       ×
                     </button>
                   </div>
                 ))}
+
+                {dayTasks.length > 3 && (
+                  <div className="more-tasks">+{dayTasks.length - 3} еще</div>
+                )}
               </div>
             </div>
           );
