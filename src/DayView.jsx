@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 6);
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // от 0 до 23
 const DAY_OF_WEEK_ABBR = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
 function DayView() {
@@ -121,7 +121,6 @@ function DayView() {
         hourTasks.sort((a, b) => {
           const [aH, aM] = a.time.split(":").map(Number);
           const [bH, bM] = b.time.split(":").map(Number);
-          // Сортируем сначала по часам, затем по минутам
           return aH !== bH ? aH - bH : aM - bM;
         });
 
