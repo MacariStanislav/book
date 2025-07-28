@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Register from "./Register";
-import Login from "./Login";
-import ScheduleApp from "./ScheduleApp";
-import DayView from "./DayView";
+import Register from "./components/auth/Register";
+import Login from "./components/auth/Login";
+import ScheduleApp from "./components/main/ScheduleApp";
+import DayView from "./components/allDay/DayView";
 import ProtectedRoute from "./ProtectedRoute";
-import { auth } from "./firebase";
+import { auth } from "./baseDate/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
 export default function App() {

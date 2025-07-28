@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "./firebase";
+import { auth, db } from "../../baseDate/firebase";
 import { ref, onValue, set } from "firebase/database";
-import "./ScheduleApp.css";
+import "../../assets/ScheduleApp.css";
 
 const WEEK_DAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 

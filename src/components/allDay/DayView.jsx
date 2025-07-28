@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { auth } from "./firebase";
+import { auth } from "../../baseDate/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // от 0 до 23

@@ -1,28 +1,28 @@
 import React, { useState } from "react";
-import { auth } from "./firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../baseDate/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import "./Auth.css";
+import "../../assets/Auth.css";
 
-export default function Login() {
+export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       navigate("/schedule");
     } catch (error) {
-      alert("Неверный логин или пароль");
+      alert(error.message);
     }
   };
 
   return (
     <div className="auth-container">
-      <h2>Вход</h2>
-      <form onSubmit={handleLogin}>
+      <h2>Регистрация</h2>
+      <form onSubmit={handleRegister}>
         <input
           type="email"
           placeholder="Email"
@@ -37,8 +37,8 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit">Войти</button>
-        <p onClick={() => navigate("/register")}>Нет аккаунта? Регистрация</p>
+        <button type="submit">Зарегистрироваться</button>
+        <p onClick={() => navigate("/login")}>Уже есть аккаунт? Войти</p>
       </form>
     </div>
   );
