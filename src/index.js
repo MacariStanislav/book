@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration'; // импортируем
+import * as serviceWorkerRegistration from './serviceWorkerRegistration'; 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -10,4 +10,4 @@ root.render(
   </React.StrictMode>
 );
 
-serviceWorkerRegistration.register(); // регистрируем сервис-воркер для офлайн
+serviceWorkerRegistration.register(); 

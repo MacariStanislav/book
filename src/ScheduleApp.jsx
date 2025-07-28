@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { auth, db } from "./firebase";
+import { ref, onValue, set } from "firebase/database";
 import "./ScheduleApp.css";
 
 const WEEK_DAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
@@ -37,14 +39,13 @@ function formatISODate(date) {
   return `${year}-${month}-${day}`;
 }
 
-function ScheduleApp() {
+export default function ScheduleApp() {
   const navigate = useNavigate();
 
   const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem("tasks");
-    return saved ? JSON.parse(saved) : [];
+    const local = localStorage.getItem("tasks");
+    return local ? JSON.parse(local) : [];
   });
-
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
 
   const [title, setTitle] = useState("");
@@ -55,8 +56,25 @@ function ScheduleApp() {
   const [importanceIndex, setImportanceIndex] = useState(0);
 
   useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const userTasksRef = ref(db, `tasks/${auth.currentUser.uid}`);
+    const unsubscribe = onValue(userTasksRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.tasks) {
+        setTasks(data.tasks);
+        localStorage.setItem("tasks", JSON.stringify(data.tasks));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth.currentUser]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
     localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+    set(ref(db, `tasks/${auth.currentUser.uid}`), { tasks });
+  }, [tasks, auth.currentUser]);
 
   const toggleDay = (day) => {
     if (selectedDays.includes(day)) {
@@ -95,7 +113,6 @@ function ScheduleApp() {
     };
 
     setTasks([...tasks, newTask]);
-
     setTitle("");
     setTime("");
     setSelectedDays([]);
@@ -134,9 +151,28 @@ function ScheduleApp() {
   const today = new Date();
   const todayStr = formatDate(today);
 
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      navigate("/login");
+    } catch (error) {
+      alert("Ошибка выхода: " + error.message);
+    }
+  };
+
   return (
     <div className="schedule-container">
-      <h1 className="schedule-title">Расписание</h1>
+      <div className="header-row">
+        <h1 className="schedule-title">Расписание</h1>
+        <button
+          onClick={handleLogout}
+          className="btn-logout"
+          aria-label="Выйти из аккаунта"
+          title="Выйти из аккаунта"
+        >
+          Выйти
+        </button>
+      </div>
 
       <div className="input-group">
         <input
@@ -262,7 +298,7 @@ function ScheduleApp() {
                       boxShadow: `0 0 8px ${color}33`,
                       cursor: "default",
                     }}
-                    onClick={(e) => e.stopPropagation()} // чтобы не было навигации при клике по задаче
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <div className="task-info">
                       <div className="task-time">{time}</div>
@@ -292,5 +328,3 @@ function ScheduleApp() {
     </div>
   );
 }
-
-export default ScheduleApp;

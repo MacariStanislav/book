@@ -1,17 +1,35 @@
+
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Register from "./Register";
+import Login from "./Login";
 import ScheduleApp from "./ScheduleApp";
 import DayView from "./DayView";
+import ProtectedRoute from "./ProtectedRoute";
 
-function App() {
+export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<ScheduleApp />} />
-        <Route path="/day/:date" element={<DayView />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/schedule"
+          element={
+            <ProtectedRoute>
+              <ScheduleApp />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/day/:date"
+          element={
+            <ProtectedRoute>
+              <DayView />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
-
-export default App;
