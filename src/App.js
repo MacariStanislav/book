@@ -1,6 +1,5 @@
-
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
 import ScheduleApp from "./ScheduleApp";
@@ -11,8 +10,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+      
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
         <Route
           path="/schedule"
           element={
@@ -29,6 +32,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Если непонятный путь — редирект на логин */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
