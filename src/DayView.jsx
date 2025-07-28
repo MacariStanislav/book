@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); 
+const HOURS = Array.from({ length: 18 }, (_, i) => i + 6);
 const DAY_OF_WEEK_ABBR = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
 function DayView() {
@@ -71,7 +71,6 @@ function DayView() {
     return completionStatus[taskId]?.[date] === true;
   };
 
-
   const toggleComplete = (taskId) => {
     setCompletionStatus((prev) => {
       const taskDates = prev[taskId] || {};
@@ -80,7 +79,6 @@ function DayView() {
       return { ...prev, [taskId]: updatedTaskDates };
     });
   };
-
 
   const deleteTask = (id) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
@@ -120,11 +118,11 @@ function DayView() {
         const hourStr = hour.toString().padStart(2, "0") + ":00";
         const hourTasks = tasksByHour[hourStr] || [];
 
-  
         hourTasks.sort((a, b) => {
           const [aH, aM] = a.time.split(":").map(Number);
           const [bH, bM] = b.time.split(":").map(Number);
-          return aM - bM;
+          // Сортируем сначала по часам, затем по минутам
+          return aH !== bH ? aH - bH : aM - bM;
         });
 
         return (

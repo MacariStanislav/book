@@ -68,13 +68,13 @@ export default function ScheduleApp() {
     });
 
     return () => unsubscribe();
-  }, [auth.currentUser]);
+  }, []); // auth.currentUser убран из зависимостей
 
   useEffect(() => {
     if (!auth.currentUser) return;
     localStorage.setItem("tasks", JSON.stringify(tasks));
     set(ref(db, `tasks/${auth.currentUser.uid}`), { tasks });
-  }, [tasks, auth.currentUser]);
+  }, [tasks]); // auth.currentUser убран из зависимостей
 
   const toggleDay = (day) => {
     if (selectedDays.includes(day)) {
