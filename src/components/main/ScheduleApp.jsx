@@ -47,42 +47,43 @@ export default function ScheduleApp() {
     return local ? JSON.parse(local) : [];
   });
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
-
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
+  const [description, setDescription] = useState("");
   const [taskType, setTaskType] = useState("days");
   const [selectedDays, setSelectedDays] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [importanceIndex, setImportanceIndex] = useState(0);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     if (!auth.currentUser) return;
-
     const userTasksRef = ref(db, `tasks/${auth.currentUser.uid}`);
     const unsubscribe = onValue(userTasksRef, (snapshot) => {
       const data = snapshot.val();
       if (data && data.tasks) {
         setTasks(data.tasks);
         localStorage.setItem("tasks", JSON.stringify(data.tasks));
+      } else {
+        const local = localStorage.getItem("tasks");
+        if (local) setTasks(JSON.parse(local));
+        else setTasks([]);
       }
     });
-
     return () => unsubscribe();
-  }, []); // auth.currentUser убран из зависимостей
+  }, []);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-    set(ref(db, `tasks/${auth.currentUser.uid}`), { tasks });
-  }, [tasks]); // auth.currentUser убран из зависимостей
-
-  const toggleDay = (day) => {
-    if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter((d) => d !== day));
-    } else {
-      setSelectedDays([...selectedDays, day]);
+    function updateOnlineStatus() {
+      setIsOnline(navigator.onLine);
     }
-  };
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
 
   const addTask = () => {
     if (!title.trim() || !time) {
@@ -97,23 +98,24 @@ export default function ScheduleApp() {
       alert("Выберите дату");
       return;
     }
-
-    const color =
-      taskType === "days"
-        ? IMPORTANCE_COLORS[importanceIndex].color
-        : "#000000";
-
+    const color = IMPORTANCE_COLORS[importanceIndex].color;
     const newTask = {
       id: Date.now(),
       title,
+      description,
       time,
       color,
       days: taskType === "days" ? selectedDays : [],
       date: taskType === "date" ? selectedDate : null,
     };
-
-    setTasks([...tasks, newTask]);
+    const updatedTasks = [...tasks, newTask];
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    if (auth.currentUser) {
+      set(ref(db, `tasks/${auth.currentUser.uid}`), { tasks: updatedTasks });
+    }
     setTitle("");
+    setDescription("");
     setTime("");
     setSelectedDays([]);
     setSelectedDate("");
@@ -121,11 +123,28 @@ export default function ScheduleApp() {
   };
 
   const deleteTask = (id) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    if (!isOnline) {
+      alert("Удаление задач доступно только при подключении к интернету. Оффлайн удалить нельзя.");
+      return;
+    }
+    if (!auth.currentUser) {
+      alert("Удаление возможно только при авторизации");
+      return;
+    }
+    const updatedTasks = tasks.filter((task) => task.id !== id);
+    // Сначала отправляем запрос на удаление в бэкенд
+    set(ref(db, `tasks/${auth.currentUser.uid}`), { tasks: updatedTasks })
+      .then(() => {
+        // Только после успешного удаления обновляем локальный стейт и localStorage
+        setTasks(updatedTasks);
+        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+      })
+      .catch((error) => {
+        alert("Ошибка при удалении задачи: " + error.message);
+      });
   };
 
   const weekDates = getWeekDates(currentWeekStart);
-
   const getTasksForDay = (dayAbbr, dateObj) => {
     const dateISO = formatISODate(dateObj);
     return tasks
@@ -164,14 +183,7 @@ export default function ScheduleApp() {
     <div className="schedule-container">
       <div className="header-row">
         <h1 className="schedule-title">Расписание</h1>
-        <button
-          onClick={handleLogout}
-          className="btn-logout"
-          aria-label="Выйти из аккаунта"
-          title="Выйти из аккаунта"
-        >
-          Выйти
-        </button>
+        <button onClick={handleLogout} className="btn-logout">Выйти</button>
       </div>
 
       <div className="input-group">
@@ -188,59 +200,50 @@ export default function ScheduleApp() {
           onChange={(e) => setTime(e.target.value)}
           className="input-field"
         />
+        <textarea
+          placeholder="Описание задачи"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="input-field"
+          rows={2}
+        />
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ marginRight: 12 }}>
+        <div className="task-type-selector">
+          <label>
             <input
               type="radio"
               checked={taskType === "days"}
               onChange={() => setTaskType("days")}
-            />{" "}
-            По дням недели
+            /> По дням недели
           </label>
           <label>
             <input
               type="radio"
               checked={taskType === "date"}
               onChange={() => setTaskType("date")}
-            />{" "}
-            По точной дате
+            /> По точной дате
           </label>
         </div>
 
         {taskType === "days" ? (
-          <>
-            <div className="days-selector">
-              {WEEK_DAYS.map((day) => (
-                <label key={day} className="day-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={selectedDays.includes(day)}
-                    onChange={() => toggleDay(day)}
-                  />
-                  {day}
-                </label>
-              ))}
-            </div>
-
-            <div
-              className="importance-selector"
-              title="Выберите уровень важности"
-            >
-              {IMPORTANCE_COLORS.map(({ name, color }, i) => (
-                <button
-                  key={color}
-                  className={`color-circle ${
-                    importanceIndex === i ? "selected" : ""
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setImportanceIndex(i)}
-                  aria-label={name}
-                  type="button"
+          <div className="days-selector">
+            {WEEK_DAYS.map((day) => (
+              <label key={day} className="day-checkbox">
+                <input
+                  type="checkbox"
+                  checked={selectedDays.includes(day)}
+                  onChange={() =>
+                    setSelectedDays((prev) =>
+                      prev.includes(day)
+                        ? prev.filter((d) => d !== day)
+                        : [...prev, day]
+                    )
+                  }
                 />
-              ))}
-            </div>
-          </>
+                {day}
+              </label>
+            ))}
+          </div>
         ) : (
           <input
             type="date"
@@ -248,22 +251,27 @@ export default function ScheduleApp() {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="input-field"
             style={{ maxWidth: "200px" }}
-            disabled={taskType !== "date"}
           />
         )}
 
-        <button onClick={addTask} className="btn-add">
-          Добавить задачу
-        </button>
+        <div className="importance-selector">
+          {IMPORTANCE_COLORS.map(({ name, color }, i) => (
+            <button
+              key={color}
+              style={{ backgroundColor: color }}
+              className={`color-circle ${importanceIndex === i ? "selected" : ""}`}
+              onClick={() => setImportanceIndex(i)}
+              title={name}
+            />
+          ))}
+        </div>
+
+        <button onClick={addTask} className="btn-add">Добавить задачу</button>
       </div>
 
       <div className="week-navigation">
-        <button onClick={prevWeek} className="btn-nav">
-          ← Предыдущая неделя
-        </button>
-        <button onClick={nextWeek} className="btn-nav">
-          Следующая неделя →
-        </button>
+        <button onClick={prevWeek} className="btn-nav">← Предыдущая неделя</button>
+        <button onClick={nextWeek} className="btn-nav">Следующая неделя →</button>
       </div>
 
       <div className="week-calendar">
@@ -278,45 +286,40 @@ export default function ScheduleApp() {
               key={dayAbbr}
               className={`day-column ${isToday ? "today" : ""}`}
               onClick={() => navigate(`/day/${formatISODate(date)}`)}
-              style={{ cursor: "pointer" }}
             >
               <div className="day-header">
                 {dayAbbr} <br />
                 <span className="date-number">{dateStr}</span>
               </div>
               <div className="tasks-list">
-                {dayTasks.length === 0 && (
+                {dayTasks.length === 0 ? (
                   <div className="no-tasks">Нет задач</div>
-                )}
-
-                {dayTasks.slice(0, 3).map(({ id, title, time, color }) => (
-                  <div
-                    key={id}
-                    className="task-item"
-                    style={{
-                      borderLeftColor: color,
-                      boxShadow: `0 0 8px ${color}33`,
-                      cursor: "default",
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="task-info">
-                      <div className="task-time">{time}</div>
-                      <div className="task-title">{title}</div>
-                    </div>
-                    <button
-                      className="btn-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTask(id);
-                      }}
-                      aria-label="Удалить задачу"
+                ) : (
+                  dayTasks.slice(0, 3).map(({ id, title, time, color }) => (
+                    <div
+                      key={id}
+                      className="task-item"
+                      style={{ borderLeftColor: color, boxShadow: `0 0 8px ${color}33` }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      ×
-                    </button>
-                  </div>
-                ))}
-
+                      <div className="task-info">
+                        <div className="task-time">{time}</div>
+                        <div className="task-title">{title}</div>
+                      </div>
+                      <button
+                        className="btn-delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTask(id);
+                        }}
+                        disabled={!isOnline}
+                        title={isOnline ? "Удалить задачу" : "Удаление недоступно офлайн"}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                )}
                 {dayTasks.length > 3 && (
                   <div className="more-tasks">+{dayTasks.length - 3} еще</div>
                 )}
